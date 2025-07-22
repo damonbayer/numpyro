@@ -3,7 +3,17 @@
 
 import jax
 from jax.api_util import flatten_fun, shaped_abstractify
-from jax.experimental.pjit import pjit_p
+
+try:
+    # JAX >= 0.7.0
+    from jax.extend.core.primitives import jit_p as pjit_p
+except ImportError:
+    try:
+        # JAX < 0.7.0 but >= 0.4.0
+        from jax.experimental.pjit import pjit_p
+    except ImportError:
+        # Fallback for very old JAX versions
+        pjit_p = None
 
 try:
     import jax.extend.linear_util as lu
@@ -148,4 +158,5 @@ def track_deps_pjit_rule(eqn, provenance_inputs):
     return track_deps_jaxpr(eqn.params["jaxpr"].jaxpr, provenance_inputs)
 
 
-track_deps_rules[pjit_p] = track_deps_pjit_rule
+if pjit_p is not None:
+    track_deps_rules[pjit_p] = track_deps_pjit_rule
